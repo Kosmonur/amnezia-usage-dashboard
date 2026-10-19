@@ -78,6 +78,21 @@ services:
     image: caddy:2-alpine
     container_name: awg-stats-caddy
     restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Set in .env only (e.g. awg-stats.example.com). Never hardcode in Caddyfile —
+      # git pull / recreate must not wipe the live hostname.
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME:-}
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -z "$$PUBLIC_HOSTNAME" ] || [ "$$PUBLIC_HOSTNAME" = "stats.example.com" ]; then
+          echo "error: set PUBLIC_HOSTNAME in .env to your real DNS name before starting Caddy" >&2
+          exit 1
+        fi
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
     ports:
       - "80:80"
       - "443:443"

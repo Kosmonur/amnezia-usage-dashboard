@@ -4,8 +4,9 @@
 	auto_https disable_redirects
 }
 
-# Replace stats.example.com with your hostname.
-http://stats.example.com, https://stats.example.com {
+# Hostname comes from PUBLIC_HOSTNAME in .env (see docker-compose.yml).
+# Do not hardcode a domain here — git pulls must not wipe production.
+http://{$PUBLIC_HOSTNAME}, https://{$PUBLIC_HOSTNAME} {
 	tls internal
 
 	reverse_proxy awg-stats:8080

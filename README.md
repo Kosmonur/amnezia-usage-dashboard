@@ -14,7 +14,7 @@ Runs in Docker **next to** AmneziaVPN. It does **not** replace Amnezia and does 
 | **Clients** | Handshake age, lifetime counters, enable / disable a peer |
 | **History** | 7 / 30 / 90 day charts and each client’s share |
 | **Quotas** | GB cap per day, rolling week, calendar month, or lifetime (auto-disable when exceeded) |
-| **Performance** | Live htop-style per-core CPU, memory, AmneziaWG container, top processes |
+| **Performance** | Live htop-style per-core CPU, memory, AmneziaWG container, Telemt host process, top processes |
 | **Account** | Change admin password (bcrypt hash in SQLite; requires current password) |
 
 Traffic numbers are from the **client’s** view (download / upload).
@@ -123,7 +123,7 @@ cp .env.example .env
 docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d --build
 ```
 
-Public (edit `Caddyfile` hostname first):
+Public (set `PUBLIC_HOSTNAME` in `.env`, e.g. `awg-stats.example.com`):
 
 ```bash
 docker compose up -d --build
@@ -157,12 +157,16 @@ Open http://127.0.0.1:8080 — user `admin`, password `demo`.
 | `ONLINE_THRESHOLD_SEC` | Max handshake age for **idle** (default `900`). **Online** is always ≤ 180s in code |
 | `SESSION_HTTPS_ONLY` | `true` behind HTTPS; **`false` for HTTP on LAN** |
 | `HOST_PROC_PATH` | Host `/proc` mount inside the app container (default `/host/proc`) for Performance |
+| `TELEMT_PATH` | Host binary watched on Performance (default `/usr/local/bin/telemt`) |
+| `CF_ACCESS_ENABLED` | `true` to require Cloudflare Access JWT on every request |
+| `CF_ACCESS_TEAM_DOMAIN` | e.g. `int-cloud.cloudflareaccess.com` |
+| `CF_ACCESS_AUD` | Access Application Audience (AUD) tag |
 
 ## Security notes
 
 - On first start the panel hashes `ADMIN_PASSWORD` with **bcrypt** and stores only the hash in SQLite (`admin_auth`). Change the password later under **Account** (requires the current password)
 - Change password and `SECRET_KEY` before anyone can reach the panel (`install.sh` does this)
-- Prefer an extra gate (Cloudflare Access, VPN-only, LAN firewall) in front of login
+- **Cloudflare Access** (recommended for public installs): Zero Trust gate before the panel password. Create the app with `scripts/setup_cf_access.py`, set `CF_ACCESS_*` in `.env`, keep origin 80/443 limited to Cloudflare IPs (`cf-firewall.service`)
 - Quotas remove the peer from the *live* interface; they do not edit `awg0.conf` on disk
 - A peer you disable by hand stays disabled even if a quota would re-enable it
 - The app talks to Docker through a socket proxy (`exec` / `inspect` only), not a raw `docker.sock` mount into the app container

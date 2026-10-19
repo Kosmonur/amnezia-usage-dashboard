@@ -183,12 +183,8 @@ if [[ "$MODE" == "lan" ]]; then
   set_env SESSION_HTTPS_ONLY "false"
 else
   set_env SESSION_HTTPS_ONLY "true"
-  if [[ -f Caddyfile ]]; then
-    if grep -q 'stats.example.com' Caddyfile; then
-      sed -i.bak "s/stats\\.example\\.com/${HOSTNAME}/g" Caddyfile
-      rm -f Caddyfile.bak
-    fi
-  fi
+  # Hostname lives in .env so git pull cannot reset Caddy to stats.example.com.
+  set_env PUBLIC_HOSTNAME "$HOSTNAME"
 fi
 
 chmod 600 .env
